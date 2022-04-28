@@ -13,9 +13,14 @@ func receiver(filename *string, conn *net.UDPConn) int {
 		// NOTE: You'll need the addr returned from recv in order to
 		// send back to the sender.
 		rcv, addr, _ := recv(conn, 0)
-
-		// recieve DATA
-		// var datapkt = make_data_pkt(rcv.dat, expected)
+		/*if rcv.hdr.seqno == expected {
+			os.WriteFile(*filename, rcv.dat, 0666)
+			_, err := send(make_ack_pkt(rcv.hdr.seqno), conn, addr)
+			if err != nil {
+				return 0
+			}
+		}
+		*/
 		var pkt *Packet
 
 		if rcv.hdr.seqno == expected {
@@ -34,7 +39,6 @@ func receiver(filename *string, conn *net.UDPConn) int {
 
 		// TODO: break out of infinte loop after FINACK
 		if rcv.hdr.flag == FINACK {
-			pkt = make_finack_pkt(expected)
 			break
 		}
 	}

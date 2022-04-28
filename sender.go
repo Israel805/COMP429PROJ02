@@ -25,13 +25,17 @@ func sender(filename *string, conn *net.UDPConn) int {
 		pkt = make_data_pkt(data[start:end], seqno)
 
 		// TODO: send DATA and get ACK
-		if isACK(pkt, ACK)
-		//_, err := conn.Write(pkt.dat)
-		//if err != nil {
-		//	return 0
+		//if isACK(pkt, seqno) {
+		//	send(pkt, conn, )
 		//}
+		_, err := conn.Write(pkt.dat)
+		if err != nil {
+			return 3
+		}
 	}
 	// TODO: send FIN and get FINACK
+	send(make_fin_pkt(seqno), conn, nil)
+
 	// TODO: return 0 for success, 3 for failure
 	return 0
 }
