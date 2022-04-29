@@ -2,6 +2,7 @@ package main
 
 import (
 	"net"
+	"os"
 )
 
 func receiver(filename *string, conn *net.UDPConn) int {
@@ -13,20 +14,22 @@ func receiver(filename *string, conn *net.UDPConn) int {
 		// NOTE: You'll need the addr returned from recv in order to
 		// send back to the sender.
 		rcv, addr, _ := recv(conn, 0)
-		/*if rcv.hdr.seqno == expected {
-			os.WriteFile(*filename, rcv.dat, 0666)
-			_, err := send(make_ack_pkt(rcv.hdr.seqno), conn, addr)
-			if err != nil {
-				return 0
-			}
-		}
-		*/
 		var pkt *Packet
 
+		var dataFile [][]byte
 		if rcv.hdr.seqno == expected {
 			pkt = make_ack_pkt(expected)
 
-			_, err := conn.Write(rcv.dat) // Writing the data
+			// get all the date from rcv till rcv.hdr.len
+
+			expected++
+			// Sends the ack packet with expected number
+			_, err := send(make_ack_pkt(expected), conn, addr)
+			if err != nil {
+				return 3
+			}
+
+			_, err = conn.Write(rcv.dat) // Writing the data
 			if err != nil {
 				return 3
 			}
@@ -39,6 +42,11 @@ func receiver(filename *string, conn *net.UDPConn) int {
 
 		// TODO: break out of infinte loop after FINACK
 		if rcv.hdr.flag == FINACK {
+			err := os.WriteFile(*filename, dataFile[0], 0622)
+			if err != nil {
+				return 3
+			}
+
 			break
 		}
 	}

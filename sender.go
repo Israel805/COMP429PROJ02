@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os"
 )
 
 func sender(filename *string, conn *net.UDPConn) int {
@@ -25,18 +26,54 @@ func sender(filename *string, conn *net.UDPConn) int {
 		pkt = make_data_pkt(data[start:end], seqno)
 
 		// TODO: send DATA and get ACK
-		//if isACK(pkt, seqno) {
-		//	send(pkt, conn, )
-		//}
-		_, err := conn.Write(pkt.dat)
+		// Sends the data packet, checks for error
+		_, err = send(pkt, conn, nil)
+		if err != nil {
+			return 3
+		}
+
+		// gets the ACK packet, checks for error
+		// returns a packet, the network, and bool
+		receive, newErr, isReceived := recv(conn, 0)
+		if newErr != nil {
+			return 3
+		}
+
+		// Checks if it is an ACK type and if it is received, increment seqno
+		if isReceived && isACK(receive, seqno) {
+			seqno++
+		}
+
+		//Write data packt to the connection
+		_, err = conn.Write(pkt.dat)
 		if err != nil {
 			return 3
 		}
 	}
-	// TODO: send FIN and get FINACK
-	send(make_fin_pkt(seqno), conn, nil)
 
-	// TODO: return 0 for success, 3 for failure
+	// TODO: send FIN and get FINACK
+	//TODO: return 0 for success, 3 for failure
+	var finPkt = make_fin_pkt(seqno)
+
+	// Sends fin packet, checks error
+	_, err = send(finPkt, conn, nil)
+	if err != nil {
+		return 3
+	}
+
+	// Receives the FINACK
+	receive, newErr, isReceived := recv(conn, 0)
+	if newErr != nil {
+		return 3
+	}
+	// Checks if the received is FINACK
+	if isReceived && receive.hdr.flag == FINACK {
+		err := os.WriteFile(*filename, receive.dat, 0622)
+		if err != nil {
+			return 3
+		}
+	}
+
 	return 0
 }
 
@@ -60,7 +97,6 @@ func make_fin_pkt(seqno uint16) *Packet {
 
 func isACK(pkt *Packet, expected uint16) bool {
 	// TODO: return true if ACK (including FINACK) and ackno is what is expected
-	var header = pkt.hdr
-	pkt.hdr.seqno += 1 // increment the sequence number
-	return (header.flag == ACK || header.flag == FINACK) && header.ackno == expected
+	var hdr = pkt.hdr
+	return (hdr.flag == ACK || hdr.flag == FINACK) && hdr.ackno == expected
 }
