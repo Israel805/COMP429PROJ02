@@ -32,15 +32,15 @@ func sender(filename *string, conn *net.UDPConn) int {
 			return 3
 		}
 
-		// gets the ACK packet, checks for error
+		// Gets the ACK packet, checks for error
 		// returns a packet, the network, and bool
-		receive, newErr, isReceived := recv(conn, 0)
+		receive, newErr, _ := recv(conn, 0)
 		if newErr != nil {
 			return 3
 		}
 
 		// Checks if it is an ACK type and if it is received, increment seqno
-		if isReceived && isACK(receive, seqno) {
+		if isACK(receive, seqno) {
 			seqno++
 		}
 
@@ -53,21 +53,22 @@ func sender(filename *string, conn *net.UDPConn) int {
 
 	// TODO: send FIN and get FINACK
 	//TODO: return 0 for success, 3 for failure
-	var finPkt = make_fin_pkt(seqno)
+	pkt = make_fin_pkt(seqno)
 
 	// Sends fin packet, checks error
-	_, err = send(finPkt, conn, nil)
+	_, err = send(pkt, conn, nil)
 	if err != nil {
 		return 3
 	}
 
 	// Receives the FINACK
-	receive, newErr, isReceived := recv(conn, 0)
+	receive, newErr, _ := recv(conn, 0)
 	if newErr != nil {
 		return 3
 	}
+
 	// Checks if the received is FINACK
-	if isReceived && receive.hdr.flag == FINACK {
+	if receive.hdr.flag == FINACK {
 		err := os.WriteFile(*filename, receive.dat, 0622)
 		if err != nil {
 			return 3
@@ -97,6 +98,5 @@ func make_fin_pkt(seqno uint16) *Packet {
 
 func isACK(pkt *Packet, expected uint16) bool {
 	// TODO: return true if ACK (including FINACK) and ackno is what is expected
-	var hdr = pkt.hdr
-	return (hdr.flag == ACK || hdr.flag == FINACK) && hdr.ackno == expected
+	return (pkt.hdr.flag == ACK || pkt.hdr.flag == FINACK) && pkt.hdr.ackno == expected
 }

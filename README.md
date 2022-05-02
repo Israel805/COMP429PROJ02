@@ -48,3 +48,5 @@ RDT Header
 +-------------+-------------+--------------------+--------------------+
 
 How to run program
+So we have two sides where sender would act as the server and the receiver would be 
+the user that is trying to get access. 

@@ -16,23 +16,26 @@ func receiver(filename *string, conn *net.UDPConn) int {
 		rcv, addr, _ := recv(conn, 0)
 		var pkt *Packet
 
-		var dataFile [][]byte
+		var dataFile []byte
 		if rcv.hdr.seqno == expected {
-			pkt = make_ack_pkt(expected)
 
 			// get all the date from rcv till rcv.hdr.len
-
+			dataFile, _ = os.ReadFile(*filename)
 			expected++
+
+			pkt = make_ack_pkt(expected)
 			// Sends the ack packet with expected number
-			_, err := send(make_ack_pkt(expected), conn, addr)
+			_, err := send(pkt, conn, addr)
 			if err != nil {
 				return 3
 			}
 
+			// Writes down the received data
 			_, err = conn.Write(rcv.dat) // Writing the data
 			if err != nil {
 				return 3
 			}
+
 			pkt.dat = rcv.dat // receive DATA from rcv
 			_, err = send(pkt, conn, addr)
 			if err != nil {
@@ -42,11 +45,18 @@ func receiver(filename *string, conn *net.UDPConn) int {
 
 		// TODO: break out of infinte loop after FINACK
 		if rcv.hdr.flag == FINACK {
-			err := os.WriteFile(*filename, dataFile[0], 0622)
+			//Write to file, check for error
+			err := os.WriteFile(*filename, dataFile, 0644)
 			if err != nil {
 				return 3
 			}
 
+			pkt = make_finack_pkt(expected)
+			//Sends a fin packet to the addres
+			_, err = send(pkt, conn, addr)
+			if err != nil {
+				return 3
+			}
 			break
 		}
 	}
