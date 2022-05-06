@@ -48,5 +48,13 @@ RDT Header
 +-------------+-------------+--------------------+--------------------+
 
 How to run program
-So we have two sides where sender would act as the server and the receiver would be 
-the user that is trying to get access. 
+So we have two sides where sender would act as the server and the receiver would be
+the user that is trying to get access.
+
+Since one of the text files has something we want to deliver to the other text file, we have to make sure that the
+receiver is well-connected and if so pass on the written text in the receiver's text.
+
+There were a few complications in terms of having the file not be able to read and also the way it was sent and
+receiving the message. It uses the sequence number and the expected number to keep the connection alive. 
+
+After several tries, it appears that both receiver and sender have been succefully executed. 
